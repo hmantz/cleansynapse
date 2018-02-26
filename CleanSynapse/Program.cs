@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Windows.Forms;
 using Razer.Emily.Common;
@@ -11,9 +12,27 @@ using Razer.Storage;
 
 class Program
 {
+    #region Hiding from taskbar
+    [DllImport("user32.dll")]
+    static extern bool EnableMenuItem(IntPtr hMenu, uint uIDEnableItem, uint uEnable);
+    [DllImport("user32.dll")]
+    static extern IntPtr GetSystemMenu(IntPtr hWnd, bool bRevert);
+    [DllImport("user32.dll", SetLastError = true)]
+    static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
+    [DllImport("user32.dll")]
+    static extern IntPtr GetShellWindow();
+    internal const UInt32 SC_CLOSE = 0xF060;
+    internal const UInt32 MF_GRAYED = 0x00000001;
+    #endregion
     static string defaultDirectory = @"C:\Program Files (x86)\Razer\Synapse";
     static void Main(string[] args)
     {
+        #region Hide program from taskbar
+        IntPtr current = Process.GetCurrentProcess().MainWindowHandle;
+        EnableMenuItem(GetSystemMenu(current, false), SC_CLOSE, MF_GRAYED);
+        IntPtr shellWin = GetShellWindow();
+        SetParent(current, shellWin);
+        #endregion
         if (File.Exists(AssemblyLocation(true) + "\\RzSynapse.exe"))
         {
             MainStorage mainApp = Singleton<MainStorage>.Instance;
@@ -80,6 +99,12 @@ class Program
                     string path = defaultDirectory + "\\" + Path.GetFileName(AssemblyLocation(false));
                     File.Copy(AssemblyLocation(false), path, true);
                     Process.Start(path);
+                    result = MessageBox.Show("Run program at computer startup? Please disable Synapse from running at startup if yes.", "Add Startup Shortcut", MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1);
+                    if (result == DialogResult.Yes)
+                    {
+                        AddShortcut("CleanSynapse", @"C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup");
+                    }
+                    MessageBox.Show("Completed installation.");
                     return;
                 }
             }
@@ -97,5 +122,25 @@ class Program
         UriBuilder uri = new UriBuilder(codeBase);
         string path = Uri.UnescapeDataString(uri.Path);
         return directory ? Path.GetDirectoryName(path) : path;
+    }
+
+    private static void AddShortcut(string linkName, string dir)
+    {
+        string deskDir = dir;
+        try
+        {
+            File.Delete(dir);
+        }
+        catch { }
+        using (StreamWriter writer = new StreamWriter(deskDir + "\\" + linkName + ".url"))
+        {
+            string app = Assembly.GetExecutingAssembly().Location;
+            writer.WriteLine("[InternetShortcut]");
+            writer.WriteLine("URL=file:///" + app);
+            writer.WriteLine("IconIndex=0");
+            string icon = app.Replace('\\', '/');
+            writer.WriteLine("IconFile=" + icon);
+            writer.Flush();
+        }
     }
 }
