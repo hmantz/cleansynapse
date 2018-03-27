@@ -21,3 +21,5 @@ I would. If you ran the program normally and it installed it for you, it should 
 - If enabled, click "Disable".
 ![help](https://i.imgur.com/D8yYC1e.png)
 
+# Limitations 
+Unfortunately, keybinds that you've set in Synapse will NOT work. I cannot control this without setting up my program to ALSO run in the background exactly like Synapse would anyway. If you want keybinds, might as well just run Synapse. If you're just looking for custom colors, use this.
