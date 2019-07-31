@@ -1,4 +1,6 @@
 # CleanSynapse ![No Synapse](https://i.imgur.com/wNP4zOl.png)
+<img alt="Maintenance" src="https://img.shields.io/maintenance/yes/2018">
+
 Removes the need to run Synapse in the background to use your custom profiles for Razer peripherals.
 
 # What does this do?
